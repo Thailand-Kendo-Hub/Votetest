@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TKA Vote — design preview</title>
+
+<!--
+  TKA VOTING PAGE — STEP 1 DESIGN PREVIEW
+  =======================================
+  This file is a PREVIEW ONLY. Nothing is live.
+  No votes are sent anywhere. No database exists yet.
+
+  Everything you see is fixed sample content written into this file so
+  the design can be judged on a phone before any machinery is built.
+
+  The bar at the very top ("Preview") is a testing control. It will NOT
+  exist on the real page — there, the page works out the phase from the
+  dates by itself.
+
+  Written to be read by a non-developer. Each section is commented.
+-->
+
+<style>
+/* ---------------------------------------------------------------
+   1. COLOURS
+   Taken from the existing Decisions Record so the two pages match.
+   --------------------------------------------------------------- */
+:root{
+  --ink:#0E1419;        /* main text */
+  --ink2:#3C4650;       /* secondary text */
+  --muted:#6F7880;      /* quiet text */
+  --bg:#FFFFFF;
+  --bg2:#F5F7F9;        /* panel fill */
+  --line:#E3E8EC;       /* hairlines */
+  --navy:#0B3D5C;       /* dark navy */
+  --navy2:#0F5680;      /* association navy */
+  --navy3:#E8F0F6;      /* navy tint */
+  --green:#157A48;  --greenbg:#E6F4EC;
+  --amber:#9A6A00;  --amberbg:#FBF1D6;
+  --red:#B4311F;    --redbg:#FBE7E3;
+  --grey:#6F7880;   --greybg:#EEF1F3;
+  --r:10px;             /* corner radius */
+}
+
+/* ---------------------------------------------------------------
+   2. TYPE
+   One font stack for all three scripts. System fonts only, so the
+   page loads instantly inside the LINE browser and never falls back
+   to a box-character font for Thai or Japanese.
+   --------------------------------------------------------------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg2);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai","Sarabun","Noto Sans JP","Hiragino Sans","Yu Gothic",Roboto,sans-serif;
+  font-size:16px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+/* Thai and Japanese need a little more room between lines */
+body[data-lang="th"]{line-height:1.8}
+body[data-lang="jp"]{line-height:1.78}
+
+h1,h2,h3{margin:0;font-weight:640;letter-spacing:-0.01em;line-height:1.3}
+p{margin:0 0 .7em}
+p:last-child{margin-bottom:0}
+
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 120px}
+
+/* ---------------------------------------------------------------
+   3. PREVIEW CONTROL — will not exist on the real page
+   --------------------------------------------------------------- */
+.preview{
+  background:#2A2F35;color:#fff;font-size:13px;
+  padding:9px 16px;display:flex;gap:10px;align-items:center;
+  justify-content:center;flex-wrap:wrap;
+}
+.preview span{opacity:.75}
+.preview select{
+  font:inherit;font-size:13px;padding:5px 8px;border-radius:7px;
+  border:1px solid #555;background:#3A4048;color:#fff;
+}
+
+/* ---------------------------------------------------------------
+   4. TOP BAR — who you are, and language
+   --------------------------------------------------------------- */
+.top{
+  position:sticky;top:0;z-index:20;
+  background:rgba(255,255,255,.94);
+  backdrop-filter:saturate(180%) blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.topin{
+  max-width:560px;margin:0 auto;padding:9px 16px;
+  display:flex;align-items:center;gap:10px;
+}
+.who{
+  flex:1;min-width:0;font-size:13px;color:var(--ink2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.who b{color:var(--ink);font-weight:640}
+.lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
+.lang button{
+  font:inherit;font-size:12.5px;padding:5px 9px;border:0;background:#fff;
+  color:var(--muted);cursor:pointer;line-height:1.4;
+}
+.lang button+button{border-left:1px solid var(--line)}
+.lang button[aria-pressed="true"]{background:var(--navy2);color:#fff}
+
+/* ---------------------------------------------------------------
+   5. THE HERO — where we are in the month
+   This is the most important thing on the page. A director opens the
+   link and must know, without reading, what they are here to do.
+   --------------------------------------------------------------- */
+.phase{
+  background:var(--navy);color:#fff;
+  border-radius:0 0 14px 14px;
+  padding:20px 18px 16px;
+  margin:0 -16px 18px;
+}
+.phase .round{font-size:12.5px;opacity:.72;margin-bottom:3px}
+.phase h1{font-size:23px;color:#fff;margin-bottom:5px}
+.phase .sub{font-size:14px;opacity:.85}
+
+/* the four-stage rail. This IS a sequence, so it is numbered. */
+.rail{display:flex;margin-top:16px;gap:5px}
+.rail div{
+  flex:1;min-width:0;
+  border-top:3px solid rgba(255,255,255,.22);
+  padding-top:7px;font-size:11px;line-height:1.32;
+  color:rgba(255,255,255,.55);
+}
+.rail div .wk{display:block;font-size:10.5px;opacity:.75;margin-bottom:1px}
+.rail div.done{border-top-color:rgba(255,255,255,.5);color:rgba(255,255,255,.72)}
+.rail div.now{border-top-color:#fff;color:#fff;font-weight:640}
+
+/* countdown sits under the rail when voting is open */
+.clock{
+  margin-top:14px;background:rgba(255,255,255,.1);
+  border-radius:8px;padding:9px 12px;font-size:13.5px;
+  display:flex;justify-content:space-between;gap:10px;
+}
+.clock b{font-weight:640;font-variant-numeric:tabular-nums}
+
+/* ---------------------------------------------------------------
+   6. THE STANDING REMINDER
+   The single most important rule: online voting does not decide.
+   --------------------------------------------------------------- */
+.notbinding{
+  border-left:3px solid var(--amber);
+  background:var(--amberbg);
+  color:#5E4200;
+  border-radius:0 var(--r) var(--r) 0;
+  padding:11px 13px;font-size:13.5px;margin-bottom:18px;
+}
+
+/* ---------------------------------------------------------------
+   7. ITEM CARDS
+   --------------------------------------------------------------- */
+.item{
+  background:#fff;border:1px solid var(--line);
+  border-radius:var(--r);margin-bottom:14px;overflow:hidden;
+}
+.ihead{padding:14px 16px 0}
+.inum{
+  font-size:12px;color:var(--navy2);font-weight:640;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;
+}
+.istate{
+  float:right;font-size:11.5px;padding:2px 9px;border-radius:20px;
+  font-weight:600;line-height:1.6;
+}
+.st-discussion{background:var(--navy3);color:var(--navy2)}
+.st-voting{background:var(--greenbg);color:var(--green)}
+.st-closed{background:var(--greybg);color:var(--grey)}
+.st-extension{background:var(--amberbg);color:var(--amber)}
+.st-ratified{background:var(--navy);color:#fff}
+
+.ititle{font-size:17px;margin:8px 0 9px;line-height:1.4}
+.ibody{padding:0 16px 15px;color:var(--ink2);font-size:15px}
+
+/* the part of the card that changes with the phase */
+.zone{border-top:1px solid var(--line);padding:14px 16px;background:var(--bg2)}
+.zlabel{font-size:12.5px;color:var(--muted);margin-bottom:9px}
+
+/* ---------------------------------------------------------------
+   8. VOTE BUTTONS
+   --------------------------------------------------------------- */
+.votes{display:grid;gap:8px}
+.vb{
+  font:inherit;font-size:15px;text-align:left;
+  padding:12px 14px;border-radius:9px;cursor:pointer;
+  background:#fff;border:1.5px solid var(--line);color:var(--ink);
+  display:flex;align-items:center;gap:10px;
+}
+.vb .dot{
+  width:17px;height:17px;border-radius:50%;flex:none;
+  border:1.5px solid #C6CDD3;background:#fff;
+}
+.vb[aria-pressed="true"]{border-color:var(--navy2);background:var(--navy3)}
+.vb[aria-pressed="true"] .dot{border-color:var(--navy2);background:var(--navy2);box-shadow:inset 0 0 0 3px #fff}
+.vb:focus-visible{outline:2px solid var(--navy2);outline-offset:2px}
+
+textarea{
+  width:100%;font:inherit;font-size:15px;padding:11px 12px;
+  border:1px solid var(--line);border-radius:9px;background:#fff;
+  color:var(--ink);resize:vertical;min-height:76px;margin-top:10px;
+}
+textarea:focus{outline:2px solid var(--navy2);outline-offset:-1px;border-color:var(--navy2)}
+
+.act{
+  font:inherit;font-size:15px;font-weight:600;width:100%;
+  padding:13px;border-radius:9px;border:0;margin-top:10px;
+  background:var(--navy2);color:#fff;cursor:pointer;
+}
+.act:disabled{background:#C6CDD3;cursor:default}
+.linkbtn{
+  font:inherit;font-size:13.5px;background:none;border:0;padding:8px 0 0;
+  color:var(--navy2);cursor:pointer;text-decoration:underline;
+}
+
+.turnout{
+  font-size:13px;color:var(--muted);margin-top:11px;
+  padding-top:11px;border-top:1px solid var(--line);
+}
+.sealed{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* ---------------------------------------------------------------
+   9. DISCUSSION THREAD
+   --------------------------------------------------------------- */
+.cmt{padding:11px 0;border-top:1px solid var(--line)}
+.cmt:first-of-type{border-top:0;padding-top:2px}
+.cmt .by{font-size:13px;font-weight:640;margin-bottom:1px}
+.cmt .when{font-size:12px;color:var(--muted);font-weight:400;margin-left:7px}
+.cmt .txt{font-size:14.5px;color:var(--ink2)}
+
+/* ---------------------------------------------------------------
+   10. RESULTS
+   --------------------------------------------------------------- */
+.bar{display:flex;height:9px;border-radius:5px;overflow:hidden;background:var(--greybg);margin:2px 0 12px}
+.bar i{display:block}
+.bar .a{background:var(--green)}
+.bar .d{background:var(--red)}
+.bar .x{background:#C6CDD3}
+
+.legend{display:flex;gap:14px;font-size:13px;margin-bottom:12px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:6px;color:var(--ink2)}
+.legend i{width:9px;height:9px;border-radius:3px;display:block}
+
+.tally{width:100%;border-collapse:collapse;font-size:14px}
+.tally td{padding:7px 0;border-top:1px solid var(--line);vertical-align:top}
+.tally tr:first-child td{border-top:0}
+.tally .nm{font-weight:600;width:34%}
+.tally .pos{text-align:right;white-space:nowrap}
+.pa{color:var(--green)} .pd{color:var(--red)} .px{color:var(--muted)}
+.cond{font-size:13.5px;color:var(--ink2);padding-top:3px}
+
+.flag{
+  background:var(--amberbg);border-left:3px solid var(--amber);color:#5E4200;
+  padding:11px 13px;border-radius:0 var(--r) var(--r) 0;font-size:14px;margin-bottom:12px;
+}
+.res{
+  background:var(--navy3);border-radius:var(--r);padding:13px 14px;
+  font-size:15px;color:var(--ink);margin-bottom:13px;
+}
+.res .rl{font-size:12.5px;color:var(--navy2);font-weight:640;margin-bottom:4px}
+
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px}
+.mini{background:#fff;border:1px solid var(--line);border-radius:9px;padding:11px 12px}
+.mini .ml{font-size:12px;color:var(--muted);margin-bottom:4px}
+.mini .mv{font-size:15px;font-weight:640;font-variant-numeric:tabular-nums}
+
+.foot{font-size:12.5px;color:var(--muted);text-align:center;padding:22px 4px 0;line-height:1.6}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body data-lang="en">
+
+<!-- PREVIEW CONTROL — not part of the real page -->
+<div class="preview">
+  <span>Preview</span>
+  <select id="phasePick">
+    <option value="discussion">Week 2 — Discussion</option>
+    <option value="voting" selected>Week 3 — Voting</option>
+    <option value="closed">Closed — awaiting meeting</option>
+    <option value="extension">Extension requested</option>
+    <option value="ratified">Ratified</option>
+  </select>
+</div>
+
+<!-- TOP BAR -->
+<div class="top"><div class="topin">
+  <div class="who" id="who"></div>
+  <div class="lang" role="group" aria-label="Language">
+    <button data-lang="en" aria-pressed="true">EN</button>
+    <button data-lang="th" aria-pressed="false">ไทย</button>
+    <button data-lang="jp" aria-pressed="false">日本語</button>
+  </div>
+</div></div>
+
+<div class="wrap">
+
+  <!-- HERO: the phase -->
+  <div class="phase">
+    <div class="round" id="roundLine"></div>
+    <h1 id="phaseTitle"></h1>
+    <div class="sub" id="phaseSub"></div>
+    <div class="rail" id="rail"></div>
+    <div class="clock" id="clock" hidden>
+      <span id="clockLabel"></span><b id="clockVal"></b>
+    </div>
+  </div>
+
+  <div class="notbinding" id="notBinding"></div>
+
+  <div id="items"></div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script>
+/* =================================================================
+   ALL WORDS ON THE PAGE
+   Every piece of text lives here in three languages. To change
+   wording, edit it here — you never have to touch the layout.
+   ================================================================= */
+var UI = {
+  en:{
+    votingAs:"Voting as", round:"Round 2 · March 2026",
+    w1:"Week 1", w2:"Week 2", w3:"Week 3", w4:"Week 4",
+    w1n:"Proposals", w2n:"Discussion", w3n:"Online vote", w4n:"Official meeting",
+    pDiscTitle:"Discussion week",
+    pDiscSub:"Read the proposals and have your say. Voting opens Monday 16 March.",
+    pVoteTitle:"Voting is open",
+    pVoteSub:"Cast your vote on every item below. Closes Sunday 22 March, 21:00.",
+    pClosedTitle:"Voting has closed",
+    pClosedSub:"Positions are now published. The meeting on Saturday 28 March decides.",
+    pRatTitle:"Decisions ratified",
+    pRatSub:"Resolved at the official meeting of Saturday 28 March.",
+    closesIn:"Closes in", closed:"Voting closed",
+    notBinding:"This vote records the board's position. It does not decide the matter. The official meeting in Week 4 makes the decision and enters it in the minutes.",
+    proposal:"Proposal",
+    yourVote:"Your vote",
+    agree:"Agree", disagree:"Disagree",
+    abstain:"Abstain — wish to discuss further",
+    conditions:"Conditions or comments (optional)",
+    condPh:"Anything you want recorded with your vote.",
+    save:"Save my vote", saved:"Vote saved. You may change it until the deadline.",
+    change:"Change my vote",
+    sealed:"Nobody can see how anyone has voted until the deadline. Positions and conditions are then published in full.",
+    turnout:"have voted",
+    of:"of",
+    reqExt:"Request an extension",
+    extCount:"directors have asked for more time. Three triggers a referral to the meeting.",
+    discussion:"Discussion",
+    addComment:"Add a comment",
+    cmtPh:"Questions, objections, alternatives.",
+    post:"Post comment",
+    discClosed:"Discussion closed for this round. Comments stay readable while you vote.",
+    voteLater:"Voting opens in Week 3.",
+    result:"Result",
+    onlineVote:"Online vote", meetingVote:"Official meeting",
+    resolution:"Resolution",
+    extFlag:"Extension requested by three directors. The official meeting will decide whether this item is held over to next month.",
+    conditionsRec:"Conditions recorded",
+    noVote:"No vote submitted",
+    footer:"Founding committee of the Thailand Kendo Association · design preview, nothing here is live"
+  },
+  th:{
+    votingAs:"ลงคะแนนในนาม", round:"รอบที่ 2 · มีนาคม 2569",
+    w1:"สัปดาห์ที่ 1", w2:"สัปดาห์ที่ 2", w3:"สัปดาห์ที่ 3", w4:"สัปดาห์ที่ 4",
+    w1n:"เสนอเรื่อง", w2n:"อภิปราย", w3n:"ลงคะแนนออนไลน์", w4n:"ประชุมทางการ",
+    pDiscTitle:"สัปดาห์แห่งการอภิปราย",
+    pDiscSub:"อ่านข้อเสนอและแสดงความเห็นได้ การลงคะแนนเปิดวันจันทร์ที่ 16 มีนาคม",
+    pVoteTitle:"เปิดลงคะแนนแล้ว",
+    pVoteSub:"กรุณาลงคะแนนทุกวาระด้านล่าง ปิดวันอาทิตย์ที่ 22 มีนาคม เวลา 21:00 น.",
+    pClosedTitle:"ปิดการลงคะแนนแล้ว",
+    pClosedSub:"เผยแพร่ผลการลงคะแนนแล้ว การประชุมวันเสาร์ที่ 28 มีนาคมเป็นผู้ตัดสิน",
+    pRatTitle:"รับรองมติแล้ว",
+    pRatSub:"มีมติในการประชุมอย่างเป็นทางการ วันเสาร์ที่ 28 มีนาคม",
+    closesIn:"ปิดใน", closed:"ปิดลงคะแนนแล้ว",
+    notBinding:"การลงคะแนนนี้เป็นการบันทึกท่าทีของคณะกรรมการ ยังไม่ถือเป็นการตัดสิน การประชุมอย่างเป็นทางการในสัปดาห์ที่ 4 เป็นผู้ตัดสินและบันทึกไว้ในรายงานการประชุม",
+    proposal:"ข้อเสนอ",
+    yourVote:"คะแนนของท่าน",
+    agree:"เห็นชอบ", disagree:"ไม่เห็นชอบ",
+    abstain:"งดออกเสียง — ขออภิปรายเพิ่มเติม",
+    conditions:"เงื่อนไขหรือความเห็น (ไม่บังคับ)",
+    condPh:"สิ่งที่ท่านต้องการให้บันทึกไว้พร้อมคะแนนของท่าน",
+    save:"บันทึกคะแนน", saved:"บันทึกแล้ว ท่านเปลี่ยนคะแนนได้จนถึงกำหนดเวลา",
+    change:"เปลี่ยนคะแนน",
+    sealed:"ไม่มีผู้ใดเห็นคะแนนของผู้อื่นจนกว่าจะถึงกำหนดเวลา หลังจากนั้นจะเผยแพร่คะแนนและเงื่อนไขทั้งหมด",
+    turnout:"ลงคะแนนแล้ว",
+    of:"จาก",
+    reqExt:"ขอขยายกำหนดเวลา",
+    extCount:"ท่านขอเวลาเพิ่ม ครบ 3 ท่านจะส่งเรื่องให้ที่ประชุมพิจารณา",
+    discussion:"การอภิปราย",
+    addComment:"เพิ่มความเห็น",
+    cmtPh:"คำถาม ข้อคัดค้าน หรือข้อเสนอทางเลือก",
+    post:"ส่งความเห็น",
+    discClosed:"ปิดการอภิปรายสำหรับรอบนี้แล้ว ยังอ่านความเห็นได้ระหว่างลงคะแนน",
+    voteLater:"การลงคะแนนเปิดในสัปดาห์ที่ 3",
+    result:"ผลการลงคะแนน",
+    onlineVote:"ลงคะแนนออนไลน์", meetingVote:"ที่ประชุมทางการ",
+    resolution:"มติ",
+    extFlag:"มีกรรมการ 3 ท่านขอขยายกำหนดเวลา ที่ประชุมอย่างเป็นทางการจะพิจารณาว่าจะเลื่อนวาระนี้ไปเดือนถัดไปหรือไม่",
+    conditionsRec:"เงื่อนไขที่บันทึกไว้",
+    noVote:"ไม่ได้ลงคะแนน",
+    footer:"คณะกรรมการก่อตั้งสมาคมเคนโดประเทศไทย · ตัวอย่างการออกแบบ ยังไม่ใช่ระบบจริง"
+  },
+  jp:{
+    votingAs:"投票者", round:"第2ラウンド · 2026年3月",
+    w1:"第1週", w2:"第2週", w3:"第3週", w4:"第4週",
+    w1n:"議案提出", w2n:"議論", w3n:"オンライン投票", w4n:"正式理事会",
+    pDiscTitle:"議論の週",
+    pDiscSub:"議案をお読みのうえご意見をお寄せください。投票開始は3月16日（月）です。",
+    pVoteTitle:"投票受付中",
+    pVoteSub:"下記のすべての議案にご投票ください。締切は3月22日（日）21:00です。",
+    pClosedTitle:"投票は締め切られました",
+    pClosedSub:"投票結果を公開しました。3月28日（土）の理事会で決定します。",
+    pRatTitle:"議決承認済み",
+    pRatSub:"3月28日（土）の正式理事会にて議決されました。",
+    closesIn:"締切まで", closed:"投票終了",
+    notBinding:"この投票は理事会の意向を記録するものであり、決定ではありません。第4週の正式理事会が決定し、議事録に記載します。",
+    proposal:"議案",
+    yourVote:"あなたの投票",
+    agree:"賛成", disagree:"反対",
+    abstain:"棄権 — さらに議論を希望",
+    conditions:"条件・コメント（任意）",
+    condPh:"投票とともに記録したい内容をご記入ください。",
+    save:"投票を保存", saved:"保存しました。締切までは変更できます。",
+    change:"投票を変更",
+    sealed:"締切までは誰の投票も他の理事には見えません。締切後に投票内容と条件をすべて公開します。",
+    turnout:"名が投票済み",
+    of:"／",
+    reqExt:"期限延長を申請",
+    extExtra:"",
+    extCount:"名が延長を申請しています。3名に達すると理事会に付託されます。",
+    discussion:"議論",
+    addComment:"コメントを追加",
+    cmtPh:"質問、反対意見、代替案など。",
+    post:"コメントを送信",
+    discClosed:"本ラウンドの議論は終了しました。投票中もコメントはお読みいただけます。",
+    voteLater:"投票は第3週に開始します。",
+    result:"結果",
+    onlineVote:"オンライン投票", meetingVote:"正式理事会",
+    resolution:"議決",
+    extFlag:"3名の理事から延長申請がありました。翌月に持ち越すかどうかは正式理事会が判断します。",
+    conditionsRec:"記録された条件",
+    noVote:"未投票",
+    footer:"タイ剣道協会設立委員会 · デザイン試作、実稼働ではありません"
+  }
+};
+
+/* =================================================================
+   SAMPLE CONTENT
+   On the real page this comes from the database. Here it is fixed
+   text so you can judge the look.
+   ================================================================= */
+var ITEMS = [
+  {
+    num:"TKA-2026-10",
+    title:{
+      en:"Adopt the TKA Voting System (founding phase) as the working method of the founding committee",
+      th:"รับรองระบบการลงคะแนนของ ส.ค.ท. (ระยะก่อตั้ง) เป็นวิธีการทำงานของคณะกรรมการก่อตั้ง",
+      jp:"TKA投票システム（設立期）を設立委員会の運営方法として採択する"
+    },
+    body:{
+      en:"That the founding committee adopts the two-stage voting system and the monthly cycle set out in the TKA Voting System document, for the founding phase only. The registered board decides the permanent rules after registration. Bylaws Article 11 §4 is to be amended to match the pass threshold of 7 of 13.",
+      th:"ให้คณะกรรมการก่อตั้งรับรองระบบการลงคะแนนสองขั้นตอนและรอบการทำงานรายเดือนตามเอกสารระบบการลงคะแนนของ ส.ค.ท. โดยใช้เฉพาะในระยะก่อตั้ง คณะกรรมการที่จดทะเบียนแล้วจะเป็นผู้กำหนดกฎถาวรภายหลังการจดทะเบียน และให้แก้ไขข้อบังคับข้อ 11 วรรค 4 ให้สอดคล้องกับเกณฑ์ผ่านมติ 7 ใน 13 เสียง",
+      jp:"設立委員会は、TKA投票システム文書に定める二段階投票制度および月次サイクルを、設立期に限り採択する。恒久的な規則は登記後の理事会が定める。定款第11条第4項は、可決要件「13名中7名」に合わせて改正するものとする。"
+    },
+    comments:[
+      {by:"Hidaka", when:{en:"10 March",th:"10 มี.ค.",jp:"3月10日"}, txt:{
+        en:"Agreed in principle. Can we state plainly that this lapses on registration? Otherwise it may be read as permanent.",
+        th:"เห็นด้วยในหลักการ ขอให้ระบุให้ชัดว่าจะสิ้นผลเมื่อจดทะเบียนแล้ว มิฉะนั้นอาจถูกเข้าใจว่าเป็นการถาวร",
+        jp:"原則として賛成です。登記時に失効する旨を明記できますか。そうでないと恒久的な規則と読まれかねません。"}},
+      {by:"Guide", when:{en:"11 March",th:"11 มี.ค.",jp:"3月11日"}, txt:{
+        en:"The bylaws amendment should be a separate item. Mixing it in here means one vote covers two different things.",
+        th:"การแก้ไขข้อบังคับควรแยกเป็นอีกวาระหนึ่ง การรวมไว้ในวาระนี้ทำให้การลงคะแนนครั้งเดียวครอบคลุมสองเรื่องที่ต่างกัน",
+        jp:"定款改正は別議案とすべきです。ここに含めると、一度の投票で性質の異なる二件を決めることになります。"}},
+      {by:"Jay", when:{en:"11 March",th:"11 มี.ค.",jp:"3月11日"}, txt:{
+        en:"Support. The monthly rhythm is the real fix — ad hoc voting in LINE is what has been failing.",
+        th:"สนับสนุนครับ รอบรายเดือนคือทางแก้ที่แท้จริง การลงคะแนนแบบเฉพาะกิจในไลน์คือปัญหาที่ผ่านมา",
+        jp:"賛成します。月次のリズムこそが本質的な改善です。LINEでの都度投票が機能していませんでした。"}}
+    ],
+    turnout:9,
+    tally:[
+      {n:"A",v:"agree"},{n:"Guide",v:"disagree",c:{en:"Split the bylaws amendment into its own item.",th:"ขอให้แยกการแก้ไขข้อบังคับเป็นวาระต่างหาก",jp:"定款改正は別議案として分けるべきです。"}},
+      {n:"Hamanishi",v:"agree"},{n:"Hidaka",v:"agree",c:{en:"On condition it lapses on registration.",th:"โดยมีเงื่อนไขว่าสิ้นผลเมื่อจดทะเบียน",jp:"登記時に失効することを条件とします。"}},
+      {n:"Jay",v:"agree"},{n:"Jeab",v:"agree"},{n:"Nam",v:"abstain"},
+      {n:"Phil",v:"agree"},{n:"Prem",v:"agree"},{n:"Tum",v:"agree"},
+      {n:"Usa",v:"no_vote"},{n:"Wanchai",v:"agree"},{n:"Yuki",v:"no_vote"}
+    ],
+    resolution:{
+      en:"Adopted. The TKA Voting System (founding phase) is the working method of the founding committee and lapses on registration. The bylaws amendment is separated as item TKA-2026-12.",
+      th:"รับรอง ให้ระบบการลงคะแนนของ ส.ค.ท. (ระยะก่อตั้ง) เป็นวิธีการทำงานของคณะกรรมการก่อตั้ง และสิ้นผลเมื่อจดทะเบียน ส่วนการแก้ไขข้อบังคับให้แยกเป็นวาระ TKA-2026-12",
+      jp:"採択。TKA投票システム（設立期）を設立委員会の運営方法とし、登記をもって失効する。定款改正は議案TKA-2026-12として分離する。"
+    },
+    meeting:{en:"11 in favour, 1 against, 1 absent",th:"เห็นชอบ 11 ไม่เห็นชอบ 1 ไม่มาประชุม 1",jp:"賛成11、反対1、欠席1"}
+  },
+  {
+    num:"TKA-2026-11",
+    title:{
+      en:"Approve thailandkendo.org as the association's single domain",
+      th:"อนุมัติให้ thailandkendo.org เป็นโดเมนเดียวของสมาคม",
+      jp:"thailandkendo.org を本会の唯一のドメインとして承認する"
+    },
+    body:{
+      en:"That thailandkendo.org is the association's only domain, that its nameservers are pointed to an association-controlled account with a minimum of three administrators, and that registration is transferred from Mr. Heng Kao to the association once TKA is legally registered.",
+      th:"ให้ thailandkendo.org เป็นโดเมนเดียวของสมาคม ให้ชี้เนมเซิร์ฟเวอร์ไปยังบัญชีที่สมาคมควบคุมซึ่งมีผู้ดูแลไม่น้อยกว่า 3 คน และให้โอนการจดทะเบียนโดเมนจากนายเฮง เกา มาเป็นของสมาคมเมื่อจดทะเบียน ส.ค.ท. เรียบร้อยแล้ว",
+      jp:"thailandkendo.org を本会の唯一のドメインとし、ネームサーバーを管理者3名以上を置く本会管理のアカウントに向け、TKAの法人登記完了後にドメイン登録者をヘン・カオ氏から本会へ移転する。"
+    },
+    comments:[
+      {by:"Phil", when:{en:"12 March",th:"12 มี.ค.",jp:"3月12日"}, txt:{
+        en:"Happy to transfer. Renewal is paid to 3 September 2027, so there is no deadline pressure.",
+        th:"ยินดีโอนให้ครับ ชำระค่าต่ออายุถึงวันที่ 3 กันยายน 2570 แล้ว จึงไม่มีข้อจำกัดด้านเวลา",
+        jp:"移転に同意します。更新は2027年9月3日まで支払い済みですので、期限の切迫はありません。"}}
+    ],
+    turnout:9,
+    tally:[
+      {n:"A",v:"agree"},{n:"Guide",v:"agree"},{n:"Hamanishi",v:"agree"},
+      {n:"Hidaka",v:"agree"},{n:"Jay",v:"agree"},{n:"Jeab",v:"abstain"},
+      {n:"Nam",v:"no_vote"},{n:"Phil",v:"agree"},{n:"Prem",v:"agree"},
+      {n:"Tum",v:"agree"},{n:"Usa",v:"agree"},{n:"Wanchai",v:"no_vote"},{n:"Yuki",v:"agree"}
+    ],
+    resolution:{
+      en:"Adopted as proposed.",
+      th:"รับรองตามที่เสนอ",
+      jp:"提案どおり採択。"
+    },
+    meeting:{en:"12 in favour, 0 against, 1 abstain",th:"เห็นชอบ 12 ไม่เห็นชอบ 0 งดออกเสียง 1",jp:"賛成12、反対0、棄権1"}
+  }
+];
+
+/* the signed-in director. On the real page this comes from the token
+   in the link, e.g. vote.thailandkendo.org/?v=k7m2x9 */
+var ME = "Prem";
+
+/* pretend deadline for the countdown */
+var DEADLINE = new Date(Date.now() + (4*24*60*60*1000) + (6*60*60*1000));
+
+var lang = "en";
+var phase = "voting";
+var myVote = null;          /* what I have chosen, in this preview only */
+var extRequested = false;
+
+function t(k){ return UI[lang][k]; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+
+/* ---------------- the hero ---------------- */
+function drawPhase(){
+  document.getElementById("who").innerHTML = t("votingAs") + " <b>" + esc(ME) + "</b>";
+  document.getElementById("roundLine").textContent = t("round");
+  document.getElementById("notBinding").textContent = t("notBinding");
+  document.getElementById("foot").textContent = t("footer");
+
+  var title, sub, active;
+  if(phase === "discussion"){ title=t("pDiscTitle"); sub=t("pDiscSub"); active=1; }
+  else if(phase === "voting"){ title=t("pVoteTitle"); sub=t("pVoteSub"); active=2; }
+  else if(phase === "ratified"){ title=t("pRatTitle"); sub=t("pRatSub"); active=3; }
+  else { title=t("pClosedTitle"); sub=t("pClosedSub"); active=3; }
+
+  document.getElementById("phaseTitle").textContent = title;
+  document.getElementById("phaseSub").textContent = sub;
+
+  var stages = [["w1","w1n"],["w2","w2n"],["w3","w3n"],["w4","w4n"]];
+  var html = "";
+  for(var i=0;i<4;i++){
+    var cls = i < active ? "done" : (i === active ? "now" : "");
+    html += '<div class="'+cls+'"><span class="wk">'+esc(t(stages[i][0]))+'</span>'+esc(t(stages[i][1]))+'</div>';
+  }
+  document.getElementById("rail").innerHTML = html;
+
+  var clock = document.getElementById("clock");
+  clock.hidden = (phase !== "voting");
+  if(phase === "voting"){ document.getElementById("clockLabel").textContent = t("closesIn"); tick(); }
+}
+
+function tick(){
+  if(phase !== "voting") return;
+  var ms = DEADLINE - new Date();
+  if(ms < 0){ document.getElementById("clockVal").textContent = t("closed"); return; }
+  var d = Math.floor(ms/86400000), h = Math.floor(ms/3600000)%24, m = Math.floor(ms/60000)%60;
+  document.getElementById("clockVal").textContent = d+"d "+h+"h "+m+"m";
+}
+setInterval(tick, 30000);
+
+/* ---------------- the items ---------------- */
+function drawItems(){
+  var out = "";
+  for(var i=0;i<ITEMS.length;i++) out += itemHtml(ITEMS[i], i);
+  document.getElementById("items").innerHTML = out;
+}
+
+function stateLabel(){
+  if(phase==="discussion") return [t("w2n"), "st-discussion"];
+  if(phase==="voting")     return [t("w3n"), "st-voting"];
+  if(phase==="extension")  return [t("reqExt"), "st-extension"];
+  if(phase==="ratified")   return [t("resolution"), "st-ratified"];
+  return [t("result"), "st-closed"];
+}
+
+function itemHtml(it, idx){
+  var s = stateLabel();
+  var h = '<div class="item">';
+  h += '<div class="ihead"><span class="istate '+s[1]+'">'+esc(s[0])+'</span>';
+  h += '<div class="inum">'+esc(it.num)+'</div>';
+  h += '<h2 class="ititle">'+esc(it.title[lang])+'</h2></div>';
+  h += '<div class="ibody">'+esc(it.body[lang])+'</div>';
+
+  if(phase === "discussion")      h += zoneDiscussion(it, idx);
+  else if(phase === "voting")     h += zoneVoting(it, idx);
+  else if(phase === "ratified")   h += zoneRatified(it);
+  else                            h += zoneClosed(it, phase === "extension");
+
+  return h + '</div>';
+}
+
+/* WEEK 2 — comment, no voting yet */
+function zoneDiscussion(it, idx){
+  var h = '<div class="zone"><div class="zlabel">'+esc(t("discussion"))+'</div>';
+  h += threadHtml(it);
+  h += '<textarea placeholder="'+esc(t("cmtPh"))+'" aria-label="'+esc(t("addComment"))+'"></textarea>';
+  h += '<button class="act">'+esc(t("post"))+'</button>';
+  h += '<div class="turnout">'+esc(t("voteLater"))+'</div></div>';
+  return h;
+}
+
+/* WEEK 3 — sealed voting, thread readable */
+function zoneVoting(it, idx){
+  var opts = [["agree",t("agree")],["disagree",t("disagree")],["abstain",t("abstain")]];
+  var mine = (idx === 0) ? myVote : null;   /* preview: only the first item is interactive */
+
+  var h = '<div class="zone"><div class="zlabel">'+esc(t("yourVote"))+'</div><div class="votes">';
+  for(var i=0;i<opts.length;i++){
+    var on = (mine === opts[i][0]) ? "true" : "false";
+    h += '<button class="vb" aria-pressed="'+on+'" data-vote="'+opts[i][0]+'" data-idx="'+idx+'">';
+    h += '<span class="dot"></span>'+esc(opts[i][1])+'</button>';
+  }
+  h += '</div>';
+  h += '<textarea placeholder="'+esc(t("condPh"))+'" aria-label="'+esc(t("conditions"))+'"></textarea>';
+  h += '<button class="act"'+(mine?"":" disabled")+'>'+esc(mine ? t("saved") : t("save"))+'</button>';
+  h += '<div class="sealed">'+esc(t("sealed"))+'</div>';
+  h += '<div class="turnout">'+it.turnout+' '+esc(t("of"))+' 13 '+esc(t("turnout"));
+  h += '<br><button class="linkbtn" data-ext="'+idx+'">'+esc(t("reqExt"))+'</button>';
+  if(extRequested && idx===0) h += '<div style="margin-top:6px">1 '+esc(t("extCount"))+'</div>';
+  h += '</div>';
+
+  h += '<div class="turnout"><div class="zlabel" style="margin-bottom:6px">'+esc(t("discussion"))+'</div>';
+  h += threadHtml(it);
+  h += '<div style="font-size:13px;color:var(--muted);margin-top:8px">'+esc(t("discClosed"))+'</div></div>';
+  return h + '</div>';
+}
+
+/* CLOSED and EXTENSION REQUESTED — everything published */
+function zoneClosed(it, flagged){
+  var h = '<div class="zone">';
+  if(flagged) h += '<div class="flag">'+esc(t("extFlag"))+'</div>';
+  h += '<div class="zlabel">'+esc(t("result"))+'</div>';
+  h += resultsHtml(it);
+  h += '</div>';
+  return h;
+}
+
+/* RATIFIED — resolution first, then both tallies */
+function zoneRatified(it){
+  var h = '<div class="zone">';
+  h += '<div class="res"><div class="rl">'+esc(t("resolution"))+'</div>'+esc(it.resolution[lang])+'</div>';
+  var c = count(it);
+  h += '<div class="twocol">';
+  h += '<div class="mini"><div class="ml">'+esc(t("onlineVote"))+'</div><div class="mv">'+c.agree+' / 13</div></div>';
+  h += '<div class="mini"><div class="ml">'+esc(t("meetingVote"))+'</div><div class="mv" style="font-size:13.5px;font-weight:600">'+esc(it.meeting[lang])+'</div></div>';
+  h += '</div>';
+  h += resultsHtml(it);
+  h += '</div>';
+  return h;
+}
+
+function count(it){
+  var c = {agree:0,disagree:0,abstain:0,no_vote:0};
+  for(var i=0;i<it.tally.length;i++) c[it.tally[i].v]++;
+  return c;
+}
+
+function resultsHtml(it){
+  var c = count(it), n = it.tally.length;
+  var pc = function(x){ return (x/n*100)+"%"; };
+  var h = '<div class="bar">';
+  h += '<i class="a" style="width:'+pc(c.agree)+'"></i>';
+  h += '<i class="d" style="width:'+pc(c.disagree)+'"></i>';
+  h += '<i class="x" style="width:'+pc(c.abstain+c.no_vote)+'"></i></div>';
+
+  h += '<div class="legend">';
+  h += '<span><i style="background:var(--green)"></i>'+esc(t("agree"))+' '+c.agree+'</span>';
+  h += '<span><i style="background:var(--red)"></i>'+esc(t("disagree"))+' '+c.disagree+'</span>';
+  h += '<span><i style="background:#C6CDD3"></i>'+esc(t("abstain").split("—")[0].trim())+' '+(c.abstain+c.no_vote)+'</span>';
+  h += '</div>';
+
+  h += '<table class="tally">';
+  for(var i=0;i<it.tally.length;i++){
+    var r = it.tally[i], lbl, cls;
+    if(r.v==="agree"){ lbl=t("agree"); cls="pa"; }
+    else if(r.v==="disagree"){ lbl=t("disagree"); cls="pd"; }
+    else if(r.v==="abstain"){ lbl=t("abstain").split("—")[0].trim(); cls="px"; }
+    else { lbl=t("noVote"); cls="px"; }
+    h += '<tr><td class="nm">'+esc(r.n)+'</td><td class="pos '+cls+'">'+esc(lbl)+'</td></tr>';
+    if(r.c) h += '<tr><td colspan="2" class="cond" style="border-top:0;padding-top:0">'+esc(r.c[lang])+'</td></tr>';
+  }
+  h += '</table>';
+  return h;
+}
+
+function threadHtml(it){
+  var h = "";
+  for(var i=0;i<it.comments.length;i++){
+    var c = it.comments[i];
+    h += '<div class="cmt"><div class="by">'+esc(c.by)+'<span class="when">'+esc(c.when[lang])+'</span></div>';
+    h += '<div class="txt">'+esc(c.txt[lang])+'</div></div>';
+  }
+  return h;
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener("click", function(e){
+  var b = e.target.closest ? e.target.closest("button") : null;
+  if(!b) return;
+
+  if(b.dataset.lang){
+    lang = b.dataset.lang;
+    document.body.setAttribute("data-lang", lang);
+    document.documentElement.lang = (lang==="jp"?"ja":lang);
+    var btns = document.querySelectorAll(".lang button");
+    for(var i=0;i<btns.length;i++) btns[i].setAttribute("aria-pressed", btns[i].dataset.lang===lang ? "true":"false");
+    render();
+  }
+  if(b.dataset.vote){ myVote = b.dataset.vote; render(); }
+  if(b.dataset.ext){ extRequested = true; render(); }
+});
+
+document.getElementById("phasePick").addEventListener("change", function(e){
+  phase = e.target.value; render();
+});
+
+function render(){ drawPhase(); drawItems(); }
+render();
+</script>
+</body>
+</html>
